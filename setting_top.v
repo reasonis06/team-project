@@ -3,7 +3,7 @@
 `include "ctrl.v"
 `include "ssegdisp.v"
 
-module top
+module setting_top
 (
     output [5:0] o_seg_enb,
     output [7:0] o_seg,
