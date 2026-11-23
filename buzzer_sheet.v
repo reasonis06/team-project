@@ -8,8 +8,10 @@ module buzzer_sheet
 // 음의 높이 정의
 localparam C5   = 95556;
 localparam D5   = 85132;
+localparam DS5  = 80353;
 localparam E5   = 75844;
 localparam F5   = 71586;
+localparam FS5  = 67569;
 localparam G5   = 63776;
 localparam A5   = 56818;
 localparam B5   = 50620;
