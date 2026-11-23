@@ -8,7 +8,7 @@ module arbiter
     output [3:0] o_num3,
     output [3:0] o_num4,
     output [3:0] o_num5,
-    input i_mode,
+    input [1:0] i_mode,
     input [5:0] i_clock_sec,
     input [5:0] i_clock_min,
     input [5:0] i_clock_hour,
@@ -17,8 +17,10 @@ module arbiter
     input [5:0] i_undef_hour
 );
 
-localparam MODE_CLOCK_OPR = 1'b0;
-localparam MODE_CLOCK_SET = 1'b1;
+localparam MODE_CLOCK_OPR = 2'd0;
+localparam MODE_CLOCK_SET = 2'd1;
+localparam MODE_ALARM_SET = 2'd2;
+localparam MODE_TIMER = 2'd3;
 
 // MUX
 reg [5:0] sec;
@@ -33,6 +35,13 @@ always @(*) begin
             min = i_clock_min;
             hour = i_clock_hour;
         end
+
+        MODE_ALARM_SET, MODE_TIMER : begin
+            sec = i_undef_sec;
+            min = i_undef_min;
+            hour = i_undef_hour;
+        end
+
         default: begin
             sec = i_undef_sec;
             min = i_undef_min;
