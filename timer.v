@@ -13,7 +13,7 @@ module  timer
     output              o_run,          // 카운트다운 중
     output              o_expire,       // 00:00 도달, 버저 요청 레벨
     output              o_expire_start, // 00:00 도달 순간 1클럭 펄스, 알람 곡 처음부터 재생용
-    input               i_set_en,       // 타이머 설정 모드일 때 1
+    input               i_set_en,       // 타이머 모드일 때 1 (설정은 정지 상태에서만 반영)
     input               i_set_min,      // 분 변경 입력
     input               i_set_sec,      // 초 변경 입력
     input               i_set_dec,      // 1이면 설정 시 감소, 0이면 증가
@@ -119,8 +119,9 @@ module  timer
                         c_state <= ST_IDLE;
                         min     <= 6'd0;
                         sec     <= 6'd0;
-                    end else if (pls_start || i_set_en) begin
+                    end else if (pls_start) begin
                         c_state <= ST_IDLE;             // 일시 정지, 남은 시간 유지
+                                                        // i_set_en은 동작 중 무시 (ctrl이 타이머 모드 내내 1을 줌)
                     end else if (pls_tick) begin
                         if (sec != 6'd0) begin
                             sec <= sec - 6'd1;

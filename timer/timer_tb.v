@@ -10,6 +10,7 @@ module  timer_tb;
     wire    [5:0]   o_sec;
     wire            o_run;
     wire            o_expire;
+    wire            o_expire_start;
     reg             i_set_en;
     reg             i_set_min;
     reg             i_set_sec;
@@ -29,6 +30,7 @@ module  timer_tb;
         .o_sec      (o_sec          ),
         .o_run      (o_run          ),
         .o_expire   (o_expire       ),
+        .o_expire_start (o_expire_start),
         .i_set_en   (i_set_en       ),
         .i_set_min  (i_set_min      ),
         .i_set_sec  (i_set_sec      ),
@@ -68,7 +70,7 @@ module  timer_tb;
     endtask
 
     initial begin
-        i_clk=1; i_rstn=0;
+        i_clk=0; i_rstn=0;          // 0으로 시작: 입력 변경 시점이 클럭 상승엣지와 겹치지 않게
         i_set_en=0; i_set_min=0; i_set_sec=0; i_set_dec=0;
         i_start=0; i_clear=0;
         #100 i_rstn = 1;
@@ -85,15 +87,28 @@ module  timer_tb;
         i_set_dec = 1'b0;
         $display("    설정값 = %02d:%02d", o_min, o_sec);
 
-        $display("--- 3) 시작 ---");
-        i_set_en = 1'b0;
+        $display("--- 3) 시작 (ctrl 통합 조건: set_en=1 유지) ---");
         press(2);
         $display("    o_run = %b", o_run);
 
-        #40000;
-        $display("--- 4) 종료 후 상태: %02d:%02d  run=%b expire=%b",
+        wait (o_expire);
+        $display("--- 4) 00:00 도달: %02d:%02d  run=%b expire=%b",
+                 o_min, o_sec, o_run, o_expire);
+
+        wait (!o_expire);
+        $display("--- 5) EXPIRE_SEC 후 버저 해제: %02d:%02d  run=%b expire=%b",
                  o_min, o_sec, o_run, o_expire);
         $finish;
+    end
+
+    initial begin
+        #200000;
+        $display("!!! 타임아웃: 00:00에 도달하지 못함");
+        $finish;
+    end
+
+    always @(posedge i_clk) begin
+        if (o_expire_start) $display("    o_expire_start 펄스 @ t=%0t", $time);
     end
 
 //  매 tick마다 남은 시간 출력
