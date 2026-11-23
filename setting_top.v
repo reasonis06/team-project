@@ -5,6 +5,7 @@
 
 module setting_top
 (
+    output [1:0] o_mode,
     output [5:0] o_seg_enb,
     output [7:0] o_seg,
     input [7:0] i_sw,
@@ -12,7 +13,7 @@ module setting_top
     input i_rstn
 );
 
-wire mode;
+wire [1:0] mode;
 wire hour_clk;
 wire min_clk;
 wire sec_clk;
@@ -26,6 +27,8 @@ wire [4:0] clock_hour;
 wire [5:0] clock_min;
 wire [5:0] clock_sec;
 wire [3:0] disp_num[0:5];
+
+assign o_mode = mode;
 
 ctrl
 u_ctrl(
