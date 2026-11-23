@@ -2,7 +2,7 @@
 
 module ctrl
 (
-    output reg o_mode,
+    output reg [1:0] o_mode,
     output reg o_hour_clk,
     output reg o_min_clk,
     output reg o_sec_clk,
@@ -41,13 +41,15 @@ u_ctrl_nco(
     .i_rstn(i_rstn)
 );
 
-reg c_mode;
-reg n_mode;
+reg [1:0] c_mode;
+reg [1:0] n_mode;
 reg [1:0] c_targ;
 reg [1:0] n_targ;
 
-localparam MODE_CLOCK_OPR = 1'b0;
-localparam MODE_CLOCK_SET = 1'b1;
+localparam MODE_CLOCK_OPR = 2'd0;
+localparam MODE_CLOCK_SET = 2'd1;
+localparam MODE_ALARM_SET = 2'd2;
+localparam MODE_TIMER     = 2'd3;
 localparam TARG_SEC  = 2'd0;
 localparam TARG_MIN  = 2'd1;
 localparam TARG_HOUR = 2'd2;
@@ -107,7 +109,10 @@ end
 always @(*) begin
     case(c_mode)
         MODE_CLOCK_OPR: n_mode = MODE_CLOCK_SET;
-        MODE_CLOCK_SET: n_mode = MODE_CLOCK_OPR;
+        MODE_CLOCK_SET: n_mode = MODE_ALARM_SET;
+        MODE_ALARM_SET: n_mode = MODE_TIMER;
+        MODE_TIMER:     n_mode = MODE_CLOCK_OPR;
+        default:        n_mode = MODE_CLOCK_OPR;
     endcase
 end
 
@@ -117,39 +122,58 @@ always @(*) begin
     TARG_SEC:  n_targ = TARG_MIN;
     TARG_MIN:  n_targ = TARG_HOUR;
     TARG_HOUR: n_targ = TARG_SEC;
+    default: n_targ = TARG_SEC;
     endcase
 end
 
 // 'Output' Comb. Logic
 always @(*) begin
+    o_mode = c_mode;
+    o_down = 1'b0;
+    o_sec_clk = 1'b0;
+    o_min_clk = 1'b0;
+    o_hour_clk = 1'b0;
+
     case(c_mode)
         MODE_CLOCK_OPR: begin
-            o_mode = MODE_CLOCK_OPR;
-            o_down = 1'b0;
             o_sec_clk = clk_1hz;
             o_min_clk = i_sec_max;
             o_hour_clk = i_min_max;
         end
+
         MODE_CLOCK_SET: begin
-            o_mode = MODE_CLOCK_SET;
             o_down = set_down;
+
             case(c_targ)
                 TARG_SEC: begin
                     o_sec_clk = set_clk;
-                    o_min_clk = 1'b0;
-                    o_hour_clk = 1'b0;
                 end
+
                 TARG_MIN: begin
-                    o_sec_clk = 1'b0;
                     o_min_clk = set_clk;
-                    o_hour_clk = 1'b0;
                 end
                  TARG_HOUR: begin
-                    o_sec_clk = 1'b0;
-                    o_min_clk = 1'b0;
                     o_hour_clk = set_clk;
                 end
             endcase
+        end
+
+        MODE_ALARM_SET: begin
+            // 알람 설정 모드
+            o_sec_clk = clk_1hz;
+            o_min_clk = i_sec_max;
+            o_hour_clk = i_min_max;
+        end
+
+        MODE_TIMER: begin
+            // 타이머 모드
+            o_sec_clk = clk_1hz;
+            o_min_clk = i_sec_max;
+            o_hour_clk = i_min_max;
+        end
+
+        default : begin
+            o_mode = MODE_CLOCK_OPR;
         end
     endcase
 end
