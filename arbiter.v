@@ -12,9 +12,11 @@ module arbiter
     input [5:0] i_clock_sec,
     input [5:0] i_clock_min,
     input [5:0] i_clock_hour,
-    input [5:0] i_undef_sec,
-    input [5:0] i_undef_min,
-    input [5:0] i_undef_hour
+    input [5:0] i_alarm_sec,
+    input [5:0] i_alarm_min,
+    input [5:0] i_alarm_hour,
+    input [5:0] i_timer_min,
+    input [5:0] i_timer_sec
     // 추후 통합 시 i_undef를 각 담당 팀원의 출력 신호명으로 변경 예정
 );
 
@@ -37,16 +39,22 @@ always @(*) begin
             hour = i_clock_hour;
         end
 
-        MODE_ALARM_SET, MODE_TIMER : begin
-            sec = i_undef_sec;
-            min = i_undef_min;
-            hour = i_undef_hour;
+        MODE_ALARM_SET : begin
+            sec = i_alarm_sec;
+            min = i_alarm_min;
+            hour = i_alarm_hour;
+        end
+
+        MODE_TIMER : begin
+            sec = i_timer_sec;
+            min = i_alarm_min;
+            hour = 6'd0;
         end
 
         default: begin
-            sec = i_undef_sec;
-            min = i_undef_min;
-            hour = i_undef_hour;
+            sec = 6'd0;
+            min = 6'd0;
+            hour = 6'd0;
         end
     endcase
 end
