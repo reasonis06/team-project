@@ -3,7 +3,7 @@
 // ==================================================
 `timescale  1ns/1ns
 `define CLKFREQ     50
-`include    "timer.v"
+`include    "../timer.v"
 
 module  timer_tb;
     wire    [5:0]   o_min;

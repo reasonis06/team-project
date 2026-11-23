@@ -16,10 +16,9 @@
 
 | 파일 | 설명 |
 |---|---|
-| `timer.v` | 타이머 본체. 팀 통합 시 이 파일만 가져가면 됨 |
-| `timer_tb.v` | 타이머 단독 테스트벤치 |
-| `timer_top.v` | 보드 단독 검증용 Top. 통합 시에는 사용하지 않음 |
-| 그 외 | 기존 실습에서 가져온 공용 모듈. 팀 레포에 이미 있으면 중복 제거 |
+| `/timer.v` (레포 루트) | 타이머 본체. 통합 top(`setting_top.v`)에서 `` `include "timer.v" ``로 사용 |
+| `timer/timer_tb.v` | 타이머 단독 테스트벤치 |
+| `timer/demo/timer_top.v` | 보드 단독 검증용 Top. 통합 시에는 사용하지 않음 |
 
 ## timer.v 인터페이스
 
@@ -61,6 +60,8 @@
 ## 단독 검증 방법
 
 ### 시뮬레이션
+
+`timer/` 폴더에서 실행
 
 ```
 iverilog -g2012 -o timer_tb.out timer_tb.v
