@@ -9,6 +9,19 @@ module ctrl
     output reg o_down,
     output [1:0] o_targ,
     output o_blink,
+
+    output reg o_alarm_hour_clk,
+    output reg o_alarm_min_clk,
+    output reg o_alarm_sec_clk,
+    output reg o_alarm_down,
+
+    output reg o_timer_set_en,
+    output reg o_timer_set_min,
+    output reg o_timer_set_sec,
+    output reg o_timer_set_dec,
+    output o_alarm_en_clk,
+    output o_timer_start,
+
     input i_hour_max,
     input i_min_max,
     input i_sec_max,
@@ -55,13 +68,15 @@ localparam TARG_MIN  = 2'd1;
 localparam TARG_HOUR = 2'd2;
 
 assign o_targ = c_targ;
-assign o_blink = (c_mode == MODE_CLOCK_SET) && clk_1hz;
-
+assign o_blink = (c_mode != MODE_CLOCK_OPR) && clk_1hz;
+assign o_alarm_en_clk = (c_mode == MODE_ALARM_SET) && !sw[4];
+assign o_timer_start = (c_mode == MODE_TIMER) && !sw[4];
 
 reg up_prev;
 reg down_prev;
 reg set_down;
 reg set_clk;
+
 
 always @(posedge i_clk or negedge i_rstn) begin
     if(!i_rstn) begin
@@ -75,7 +90,7 @@ always @(posedge i_clk or negedge i_rstn) begin
 
         set_clk <= 1'b0;
 
-        if(c_mode == MODE_CLOCK_SET) begin
+        if(c_mode == MODE_CLOCK_SET || c_mode == MODE_ALARM_SET || c_mode == MODE_TIMER) begin
             if(up_prev && !sw[2] && sw[3]) begin
                 set_down <= 1'b0;
                 set_clk <= 1'b1;
@@ -86,6 +101,7 @@ always @(posedge i_clk or negedge i_rstn) begin
         end
     end
 end
+
 
 
 // State Register
@@ -120,7 +136,8 @@ end
 always @(*) begin
     case(c_targ)
     TARG_SEC:  n_targ = TARG_MIN;
-    TARG_MIN:  n_targ = TARG_HOUR;
+    TARG_MIN:  n_targ = (c_mode == MODE_TIMER) ?
+                            TARG_SEC : TARG_HOUR;
     TARG_HOUR: n_targ = TARG_SEC;
     default: n_targ = TARG_SEC;
     endcase
@@ -133,6 +150,16 @@ always @(*) begin
     o_sec_clk = 1'b0;
     o_min_clk = 1'b0;
     o_hour_clk = 1'b0;
+
+    o_alarm_hour_clk = 1'b0;
+    o_alarm_min_clk = 1'b0;
+    o_alarm_sec_clk = 1'b0;
+    o_alarm_down = 1'b0;
+
+    o_timer_set_en = 1'b0;
+    o_timer_set_min = 1'b0;
+    o_timer_set_sec = 1'b0;
+    o_timer_set_dec = 1'b0;
 
     case(c_mode)
         MODE_CLOCK_OPR: begin
@@ -163,6 +190,15 @@ always @(*) begin
             o_sec_clk = clk_1hz;
             o_min_clk = i_sec_max;
             o_hour_clk = i_min_max;
+
+            o_alarm_down = set_down;
+
+            case(c_targ)
+                TARG_SEC:  o_alarm_sec_clk = set_clk;
+                TARG_MIN:  o_alarm_min_clk = set_clk;
+                TARG_HOUR: o_alarm_hour_clk = set_clk;
+            endcase
+
         end
 
         MODE_TIMER: begin
@@ -170,6 +206,14 @@ always @(*) begin
             o_sec_clk = clk_1hz;
             o_min_clk = i_sec_max;
             o_hour_clk = i_min_max;
+
+            o_timer_set_en = 1'b1;
+            o_timer_set_dec = set_down;
+
+            case(c_targ)
+                TARG_SEC: o_timer_set_sec = set_clk;
+                TARG_MIN: o_timer_set_min = set_clk;
+            endcase
         end
 
         default : begin
