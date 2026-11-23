@@ -15,6 +15,7 @@ module arbiter
     input [5:0] i_undef_sec,
     input [5:0] i_undef_min,
     input [5:0] i_undef_hour
+    // 추후 통합 시 i_undef를 각 담당 팀원의 출력 신호명으로 변경 예정
 );
 
 localparam MODE_CLOCK_OPR = 2'd0;
