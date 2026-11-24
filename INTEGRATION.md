@@ -125,21 +125,9 @@ LCD 파트 단독 검증은 기존 `lcd/lcd_top_tb.v` 를 그대로 쓰면 됨.
 
 ## Quartus
 
-1. New Project Wizard, Directory `C:\Users\seeun\lab\team-project`
-2. Project name / Top-level entity **`setting_top`**
-3. Add Files: **`setting_top.v` 하나만** (나머지는 include로 들어감)
-4. Device: Cyclone IV E **EP4CE22F17C6**
-5. Assignments - Settings - Files 에서 **SEARCH_PATH 에 `lcd` 추가**
-   또는 Tcl Console 에서
-   ```
-   set_global_assignment -name SEARCH_PATH lcd
-   ```
-6. Start Compilation
-7. Tcl Console 에서 `source pin.tcl`
-8. Tcl Console 에서 `source pin_lcd.tcl`
-9. 다시 Start Compilation
-10. `output_files/setting_top.pin` 에서 `C8` 이 `o_buzzer` 인지 확인
-11. Programmer 로 다운로드
+File → Open Project → setting_top.qpf
+Processing → Start Compilation
+Tools → Programmer → Start
 
 ### LCD 핀 배치
 
