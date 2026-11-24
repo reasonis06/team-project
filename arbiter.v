@@ -47,7 +47,7 @@ always @(*) begin
 
         MODE_TIMER : begin
             sec = i_timer_sec;
-            min = i_timer_min;
+            min = i_alarm_min;
             hour = 6'd0;
         end
 
