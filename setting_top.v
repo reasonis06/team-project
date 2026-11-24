@@ -24,11 +24,9 @@
 //    i_sw[3] E10  값 감소
 //    i_sw[4] C11  알람설정: 알람 ON/OFF   타이머: 시작 / 일시정지
 //    i_sw[5] B11  타이머: 00:00:00 으로 초기화
-//    PSD 센서   버저가 울리는 중에 손을 가까이 대면 알람·타이머 정지
 //
 //  표시
 //    7세그 : 시시 분분.초초
-//    오른쪽 끝 자리 소수점이 켜져 있으면 PSD가 손을 감지한 상태
 //    왼쪽 끝 자리 소수점이 켜져 있으면 알람 ON
 //    설정 모드에서는 선택한 자리가 1초 주기로 깜빡임
 //    LCD   : 1행 현재 모드, 2행 알람 시각과 ON/OFF
@@ -40,8 +38,6 @@
 `include "alarm.v"
 `include "timer.v"
 `include "buzzer.v"
-`include "psd.v"
-`include "psd_stop.v"
 `include "lcd/lcd_top.v"
 
 module setting_top
@@ -49,10 +45,6 @@ module setting_top
     output [5:0] o_seg_enb,
     output [7:0] o_seg,
     output       o_buzzer,
-    output       o_sclk,
-    output       o_csn,
-    output       o_din,
-    input        i_dout,
     output       o_lcd_e,
     output       o_lcd_rs,
     output       o_lcd_rw,
@@ -108,11 +100,6 @@ wire timer_expire;
 wire timer_expire_start;
 
 wire buzzer_enb;
-
-wire [11:0] psd_data;
-wire        psd_near;
-wire        psd_detect;
-wire        psd_stop_pulse;
 
 ctrl
 u_ctrl(
@@ -179,7 +166,6 @@ u_alarm(
     .i_en_clk(alarm_en_clk),
     .i_down(alarm_down),
     .i_tick(tick),
-    .i_stop(psd_stop_pulse),
     .i_clk(i_clk),
     .i_rstn(i_rstn)
 );
@@ -202,7 +188,7 @@ u_timer(
     .i_set_dec(timer_set_dec),
     .i_tick(tick),
     .i_start(timer_start),
-    .i_clear(timer_clear | (psd_stop_pulse & timer_expire)),
+    .i_clear(timer_clear),
     .i_clk(i_clk),
     .i_rstn(i_rstn)
 );
@@ -240,7 +226,7 @@ u_ssegdisp(
     .i_num3(disp_num[3]),
     .i_num4(disp_num[4]),
     .i_num5(disp_num[5]),
-    .i_dp0(psd_near),           // 손 감지 중이면 오른쪽 끝 자리에 점
+    .i_dp0(1'b0),
     .i_dp1(1'b0),
     .i_dp2(1'b1),
     .i_dp3(1'b0),
@@ -251,34 +237,6 @@ u_ssegdisp(
     .i_clk(i_clk),
     .i_rstn(i_rstn)
 );
-
-// --------------------------------------------------
-//  PSD 센서
-//  버저가 울리는 중에만 정지 펄스를 냄.
-//  그냥 지나가다 손이 닿아도 시계나 동작 중인 타이머는 건드리지 않음
-// --------------------------------------------------
-psd
-u_psd(
-    .o_sclk(o_sclk),
-    .o_csn(o_csn),
-    .o_din(o_din),
-    .o_data(psd_data),
-    .i_dout(i_dout),
-    .i_addr(3'd0),
-    .i_clk(i_clk),
-    .i_rstn(i_rstn)
-);
-
-psd_stop
-u_psd_stop(
-    .o_near(psd_near),
-    .o_detect(psd_detect),
-    .i_data(psd_data),
-    .i_clk(i_clk),
-    .i_rstn(i_rstn)
-);
-
-assign psd_stop_pulse = psd_detect & (alarm_ring | timer_expire);
 
 // i_enb 1 = 소리 꺼짐
 assign buzzer_enb = ~(alarm_ring | timer_expire);
@@ -303,6 +261,7 @@ u_lcd_top(
     .i_mode(mode),
     .i_alarm_hour(alarm_hour),
     .i_alarm_min(alarm_min),
+    .i_alarm_sec(alarm_sec),
     .i_alarm_en(alarm_en),
     .i_clk(i_clk),
     .i_rstn(i_rstn)
