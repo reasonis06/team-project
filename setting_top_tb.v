@@ -165,18 +165,20 @@ module setting_top_tb;
     endtask
 
 
-    // 2행 기대 문자열 : "ALARM HH:MM  ON " / "ALARM HH:MM  OFF"
+    // 2행 기대 문자열 : "ALM HH:MM:SS ON " / "ALM HH:MM:SS OFF"
     function [16*8-1:0] lcd_exp2;
         input dummy;
-        reg [7:0] h10, h1, m10, m1;
+        reg [7:0] h10, h1, m10, m1, s10, s1;
         begin
             // 연결 연산자 안에서는 폭이 정해진 값만 쓸 수 있어 변수로 받아둠
             h10 = 8'h30 + (u_top.alarm_hour / 10);
             h1  = 8'h30 + (u_top.alarm_hour % 10);
             m10 = 8'h30 + (u_top.alarm_min  / 10);
             m1  = 8'h30 + (u_top.alarm_min  % 10);
-            lcd_exp2 = { "ALARM ", h10, h1, ":", m10, m1, "  ",
-                         u_top.alarm_en ? "ON " : "OFF" };
+            s10 = 8'h30 + (u_top.alarm_sec  / 10);
+            s1  = 8'h30 + (u_top.alarm_sec  % 10);
+            lcd_exp2 = { "ALM ", h10, h1, ":", m10, m1, ":", s10, s1,
+                         u_top.alarm_en ? " ON " : " OFF" };
         end
     endfunction
 
