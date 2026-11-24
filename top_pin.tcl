@@ -57,6 +57,6 @@ set_location_assignment PIN_L14 -to o_lcd_e
 # --------------------------------------------------
 #  IR 리모컨 수신부 (사용하는 보드의 IR 수신 핀 번호로 수정하세요)
 # --------------------------------------------------
-set_location_assignment PIN_XXX -to i_ir_rxb
+set_location_assignment PIN_D12 -to i_ir_rxb
 
 export_assignments
