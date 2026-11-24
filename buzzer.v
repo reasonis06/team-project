@@ -8,7 +8,7 @@ module buzzer (
     input       i_rstn
 );
 
-localparam UPBND = 63;
+localparam UPBND = 15;
 
 reg  [$clog2(UPBND+1)-1:0] cnt;
 reg  [31:0]                dur_cnt;
