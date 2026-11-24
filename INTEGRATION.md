@@ -125,9 +125,9 @@ LCD 파트 단독 검증은 기존 `lcd/lcd_top_tb.v` 를 그대로 쓰면 됨.
 
 ## Quartus
 
-File → Open Project → setting_top.qpf
-Processing → Start Compilation
-Tools → Programmer → Start
+1. File → Open Project → setting_top.qpf
+2. Processing → Start Compilation
+3. Tools → Programmer → Start
 
 ### LCD 핀 배치
 
