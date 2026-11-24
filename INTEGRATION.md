@@ -1,5 +1,7 @@
 # 통합 정리 (local/integration)
 
+보드에서 7세그먼트 · LCD · 버저 · 버튼 전부 동작 확인 완료.
+
 `setting_top.v`를 전체 통합 Top으로 만들고, 네 파트를 실제로 연결했음.
 모듈명은 전부 그대로고 기존 포트는 지우거나 이름을 바꾸지 않았음. 필요한 포트만 추가했음.
 
@@ -134,23 +136,39 @@ LCD 파트 단독 검증은 기존 `lcd/lcd_top_tb.v` 를 그대로 쓰면 됨.
    ```
 6. Start Compilation
 7. Tcl Console 에서 `source pin.tcl`
-8. LCD 핀을 정한 뒤 `source pin_lcd.tcl`
+8. Tcl Console 에서 `source pin_lcd.tcl`
 9. 다시 Start Compilation
 10. `output_files/setting_top.pin` 에서 `C8` 이 `o_buzzer` 인지 확인
 11. Programmer 로 다운로드
 
-### 아직 남은 것: LCD 핀
+### LCD 핀 배치
 
-LCD 신호 11개가 7세그먼트 핀 11개와 **완전히 같음**.
+LCD 신호 11개가 11주차 핀 그대로면 7세그먼트 핀과 완전히 겹침.
+그래서 LCD를 같은 GPIO_1 의 뒤쪽 헤더 두 개로 옮겼음. `pin_lcd.tcl` 에 들어 있음.
+
+보드 silkscreen 의 `FPGA GPIO-2` 는 Altera DE0-Nano 기준 **GPIO_1 (JP2)** 임.
+번호에서 핀 이름은 DE0-Nano User Manual Table 3-7 기준.
+
+| 헤더 (silkscreen 번호) | 핀 이름 | 용도 |
+|---|---|---|
+| GPIO_1 0~7 | `F13 T15 T14 T13 R13 T12 R12 T11` | 7세그 데이터 |
+| GPIO_1 8~13 | `T10 R11 P11 R10 N12 P9` | 7세그 enable |
+| GPIO_1 16~23 | `L16 K16 R16 L15 P15 P16 R14 N16` | **LCD 데이터** |
+| GPIO_1 24~26 | `N15 P14 L14` | **LCD rs / rw / e** |
+| GPIO_0 16 | `C8` | 버저 |
+| GPIO_0 24~31 | `C9 D9 E11 E10 C11 B11 A12 D11` | 키패드 |
+
+케이블 연결
 
 ```
-io_lcd_data[7:0] = T11 R12 T12 R13 T13 T14 T15 F13   -> o_seg[0:7] 와 동일
-o_lcd_e / rs / rw = P11 / T10 / R11                  -> o_seg_enb[3] / [5] / [4] 와 동일
+7세그 케이블      -> GPIO_1  0~7  헤더, 8~15 헤더
+LCD 데이터 케이블 -> GPIO_1 16~23 헤더
+LCD 제어 케이블   -> GPIO_1 24~31 헤더
+키패드 케이블     -> GPIO_0 24~31 헤더
+버저 케이블       -> GPIO_0 16~23 헤더
 ```
 
-그래서 둘을 한 프로젝트에 넣으면 핀 충돌로 컴파일이 안 됨.
-LCD 케이블을 **비어 있는 다른 확장 헤더**에 꽂고, 그 헤더 밑에 적힌 핀 이름을
-`pin_lcd.tcl` 에 채워야 함. 10핀 헤더 하나가 신호 8개라 헤더 두 개가 필요함.
+7세그와 LCD가 같은 GPIO_1 안의 서로 다른 구간을 쓰므로 **동시 사용 가능함.**
 
 ---
 
