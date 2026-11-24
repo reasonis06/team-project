@@ -15,9 +15,9 @@ module arbiter
     input [5:0] i_alarm_sec,
     input [5:0] i_alarm_min,
     input [5:0] i_alarm_hour,
+    input [5:0] i_timer_hour,       // 추가 : timer.v가 시·분·초가 되면서 필요
     input [5:0] i_timer_min,
     input [5:0] i_timer_sec
-    // 추후 통합 시 i_undef를 각 담당 팀원의 출력 신호명으로 변경 예정
 );
 
 localparam MODE_CLOCK_OPR = 2'd0;
@@ -47,8 +47,8 @@ always @(*) begin
 
         MODE_TIMER : begin
             sec = i_timer_sec;
-            min = i_alarm_min;
-            hour = 6'd0;
+            min = i_timer_min;      // 수정 : i_alarm_min -> i_timer_min
+            hour = i_timer_hour;    // 수정 : 6'd0 -> i_timer_hour
         end
 
         default: begin
