@@ -5,6 +5,7 @@
 //  포트는 원본과 같음. 아래 3개를 추가했음
 //    i_down : 알람 값 감소
 //    i_tick : 1Hz 1클럭 펄스. 울림 유지 시간을 세는 데 씀
+//    i_stop : 울리는 중에 1이 들어오면 즉시 정지 (PSD 손 감지용)
 //    i_clk  : 50MHz 시스템 클럭
 //
 //  달라진 점
@@ -38,6 +39,7 @@ module alarm
     input            i_en_clk,      // 알람 ON/OFF 토글 펄스
     input            i_down,        // 1이면 감소
     input            i_tick,        // 1Hz 1클럭 펄스
+    input            i_stop,        // 1클럭 펄스. 울림 즉시 정지
     input            i_clk,
     input            i_rstn
 );
@@ -91,8 +93,11 @@ module alarm
     end
 
     // 울림 유지
+    //   armed : 시각이 일치하는 1초 안에서 한 번만 울리게 하는 잠금
+    //           울림을 끄고 나서 같은 초 동안 다시 울리는 것을 막음
     wire       match;
     reg        ringing;
+    reg        armed;
     reg  [3:0] ring_cnt;
 
     assign match = o_alarm_en
@@ -104,21 +109,28 @@ module alarm
         if (!i_rstn) begin
             ringing  <= 1'b0;
             ring_cnt <= 4'd0;
-        end else if (!ringing) begin
-            if (match) begin
-                ringing  <= 1'b1;
-                ring_cnt <= 4'd0;
-            end
+            armed    <= 1'b1;
         end else begin
-            if (!o_alarm_en) begin
-                ringing  <= 1'b0;           // 울리는 중 OFF하면 즉시 정지
-                ring_cnt <= 4'd0;
-            end else if (i_tick) begin
-                if (ring_cnt == RING_SEC - 1) begin
-                    ringing  <= 1'b0;
+            if (!match) armed <= 1'b1;      // 일치 구간을 벗어나면 다시 무장
+
+            if (!ringing) begin
+                if (match && armed) begin
+                    ringing  <= 1'b1;
                     ring_cnt <= 4'd0;
-                end else begin
-                    ring_cnt <= ring_cnt + 4'd1;
+                end
+            end else begin
+                if (!o_alarm_en || i_stop) begin
+                    ringing  <= 1'b0;       // OFF 또는 손 감지로 즉시 정지
+                    ring_cnt <= 4'd0;
+                    armed    <= 1'b0;
+                end else if (i_tick) begin
+                    if (ring_cnt == RING_SEC - 1) begin
+                        ringing  <= 1'b0;
+                        ring_cnt <= 4'd0;
+                        armed    <= 1'b0;
+                    end else begin
+                        ring_cnt <= ring_cnt + 4'd1;
+                    end
                 end
             end
         end

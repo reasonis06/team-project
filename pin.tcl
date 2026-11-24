@@ -23,4 +23,9 @@ set_location_assignment PIN_P11 -to o_seg_enb[3]
 set_location_assignment PIN_R10 -to o_seg_enb[2]
 set_location_assignment PIN_N12 -to o_seg_enb[1]
 set_location_assignment PIN_P9 -to o_seg_enb[0]
+# ----- PSD (DE0-Nano 내장 ADC) -----
+set_location_assignment PIN_A9 -to i_dout
+set_location_assignment PIN_A10 -to o_csn
+set_location_assignment PIN_B10 -to o_din
+set_location_assignment PIN_B14 -to o_sclk
 export_assignments

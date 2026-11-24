@@ -22,6 +22,7 @@ module setting_top_tb;
     defparam    setting_top_tb.u_top.u_ssegdisp.u_ssegdisp_nco.FREQDIV = 20;
     defparam    setting_top_tb.u_top.u_lcd_top.u_lcd_textgen.u_textgen_nco.FREQDIV = 2000;
     defparam    setting_top_tb.u_top.u_lcd_top.u_textlcd.u_textlcd_nco.FREQDIV = 4;
+    defparam    setting_top_tb.u_top.u_psd_stop.HOLD = 200;
 
 // --------------------------------------------------
 //  DUT
@@ -29,6 +30,10 @@ module setting_top_tb;
     wire    [5:0]   o_seg_enb;
     wire    [7:0]   o_seg;
     wire            o_buzzer;
+    wire            o_sclk;
+    wire            o_csn;
+    wire            o_din;
+    reg             i_dout;
     wire            o_lcd_e;
     wire            o_lcd_rs;
     wire            o_lcd_rw;
@@ -42,6 +47,10 @@ module setting_top_tb;
         .o_seg_enb  (o_seg_enb  ),
         .o_seg      (o_seg      ),
         .o_buzzer   (o_buzzer   ),
+        .o_sclk     (o_sclk     ),
+        .o_csn      (o_csn      ),
+        .o_din      (o_din      ),
+        .i_dout     (i_dout     ),
         .o_lcd_e    (o_lcd_e    ),
         .o_lcd_rs   (o_lcd_rs   ),
         .o_lcd_rw   (o_lcd_rw   ),
@@ -136,7 +145,7 @@ module setting_top_tb;
 //  검사
 // --------------------------------------------------
     integer err = 0;
-    integer before;
+    integer prev;
     integer after;
     integer disp_min;
     reg [5:0] target_sec;
@@ -159,14 +168,14 @@ module setting_top_tb;
     // 2행 기대 문자열 : "ALARM HH:MM  ON " / "ALARM HH:MM  OFF"
     function [16*8-1:0] lcd_exp2;
         input dummy;
+        reg [7:0] h10, h1, m10, m1;
         begin
-            lcd_exp2 = { "ALARM ",
-                         8'h30 + (u_top.alarm_hour / 10),
-                         8'h30 + (u_top.alarm_hour % 10),
-                         ":",
-                         8'h30 + (u_top.alarm_min  / 10),
-                         8'h30 + (u_top.alarm_min  % 10),
-                         "  ",
+            // 연결 연산자 안에서는 폭이 정해진 값만 쓸 수 있어 변수로 받아둠
+            h10 = 8'h30 + (u_top.alarm_hour / 10);
+            h1  = 8'h30 + (u_top.alarm_hour % 10);
+            m10 = 8'h30 + (u_top.alarm_min  / 10);
+            m1  = 8'h30 + (u_top.alarm_min  % 10);
+            lcd_exp2 = { "ALARM ", h10, h1, ":", m10, m1, "  ",
                          u_top.alarm_en ? "ON " : "OFF" };
         end
     endfunction
@@ -275,6 +284,7 @@ module setting_top_tb;
 // --------------------------------------------------
     initial begin
         i_sw      = 8'hFF;
+        i_dout    = 1'b0;
         ac        = 7'h00;
         busy_cnt  = 4'd0;
         clear_cnt = 0;
@@ -304,21 +314,21 @@ module setting_top_tb;
         // 일반 동작에서 59초 -> 다음 분
         force u_top.u_clock.u_clock_cnt_sec.o_cnt = 6'd58;
         #(TCLK); release u_top.u_clock.u_clock_cnt_sec.o_cnt;
-        before = u_top.clock_min;
+        prev = u_top.clock_min;
         #(2*TSEC + TSEC/2);
         show("59 -> 00 roll");
         chk("일반 동작에서 59초 뒤 분이 +1",
-            u_top.clock_min == ((before + 1) % 60));
+            u_top.clock_min == ((prev + 1) % 60));
 
         $display("");
         $display("==================================================");
         $display(" 3. 모드 전환 시 초가 튀지 않는지");
         $display("==================================================");
-        before = clk_total(0);
+        prev = clk_total(0);
         press_n(0, 4);
         after = clk_total(0);
-        $display("    모드 4번 전환 전 %0d초 -> 후 %0d초 (실제 경과 약 0.6초)", before, after);
-        chk("모드 전환으로 초가 뛰지 않음", (after - before) <= 1);
+        $display("    모드 4번 전환 전 %0d초 -> 후 %0d초 (실제 경과 약 0.6초)", prev, after);
+        chk("모드 전환으로 초가 뛰지 않음", (after - prev) <= 1);
         chk("한 바퀴 돌아 CLOCK 모드", u_top.mode == 2'd0);
 
         $display("");
@@ -330,50 +340,50 @@ module setting_top_tb;
         chk("mode == CLOCK_SET", u_top.mode == 2'd1);
         chk("모드 바꾸면 자리는 초부터", u_top.targ == 2'd0);
 
-        before = clk_total(0);
+        prev = clk_total(0);
         #(2*TSEC);
-        chk("설정 모드에서 시계가 멈춤", clk_total(0) == before);
+        chk("설정 모드에서 시계가 멈춤", clk_total(0) == prev);
 
         goto_targ(2'd1);
-        before = u_top.clock_min;
+        prev = u_top.clock_min;
         press_n(2, 3);
         show("sw2 x3 (min up)");
-        chk("sw2 3번에 분 +3", u_top.clock_min == ((before + 3) % 60));
+        chk("sw2 3번에 분 +3", u_top.clock_min == ((prev + 3) % 60));
 
-        before = u_top.clock_min;
+        prev = u_top.clock_min;
         press_n(3, 1);
         show("sw3 x1 (min down)");
-        chk("sw3 1번에 분 -1", u_top.clock_min == ((before + 59) % 60));
+        chk("sw3 1번에 분 -1", u_top.clock_min == ((prev + 59) % 60));
 
         goto_targ(2'd2);
-        before = u_top.clock_hour;
+        prev = u_top.clock_hour;
         press_n(2, 2);
         show("sw2 x2 (hour up)");
-        chk("sw2 2번에 시 +2", u_top.clock_hour == ((before + 2) % 24));
+        chk("sw2 2번에 시 +2", u_top.clock_hour == ((prev + 2) % 24));
 
         // 자리올림 / 자리내림
         goto_targ(2'd0);
         while (u_top.clock_sec != 6'd59) press(2);
         show("sec = 59");
-        before = u_top.clock_min;
+        prev = u_top.clock_min;
         press(2);
         show("sec 59 -> 00");
         chk("초 59에서 올리면 초 00, 분 +1",
-            (u_top.clock_sec == 6'd0) && (u_top.clock_min == ((before + 1) % 60)));
+            (u_top.clock_sec == 6'd0) && (u_top.clock_min == ((prev + 1) % 60)));
 
-        before = u_top.clock_min;
+        prev = u_top.clock_min;
         press(3);
         show("sec 00 -> 59");
         chk("초 00에서 내리면 초 59, 분 -1",
-            (u_top.clock_sec == 6'd59) && (u_top.clock_min == ((before + 59) % 60)));
+            (u_top.clock_sec == 6'd59) && (u_top.clock_min == ((prev + 59) % 60)));
 
         goto_targ(2'd1);
         while (u_top.clock_min != 6'd59) press(2);
-        before = u_top.clock_hour;
+        prev = u_top.clock_hour;
         press(2);
         show("min 59 -> 00");
         chk("분 59에서 올리면 분 00, 시 +1",
-            (u_top.clock_min == 6'd0) && (u_top.clock_hour == ((before + 1) % 24)));
+            (u_top.clock_min == 6'd0) && (u_top.clock_hour == ((prev + 1) % 24)));
 
         $display("");
         $display("==================================================");
@@ -384,24 +394,24 @@ module setting_top_tb;
         chk("mode == ALARM_SET", u_top.mode == 2'd2);
         chk("화면이 알람 값", u_top.disp_num[0] == (u_top.alarm_sec % 10));
 
-        before = clk_total(0);
+        prev = clk_total(0);
         #(2*TSEC);
-        chk("알람 설정 중에도 시계는 감", clk_total(0) > before);
+        chk("알람 설정 중에도 시계는 감", clk_total(0) > prev);
 
         press(4);
         show("sw4 (alarm on)");
         chk("sw4로 알람 ON", u_top.alarm_en == 1'b1);
 
         goto_targ(2'd1);
-        before = u_top.alarm_min;
+        prev = u_top.alarm_min;
         press_n(2, 5);
         show("sw2 x5 (alarm min up)");
-        chk("알람 분 +5", u_top.alarm_min == ((before + 5) % 60));
+        chk("알람 분 +5", u_top.alarm_min == ((prev + 5) % 60));
 
-        before = u_top.alarm_min;
+        prev = u_top.alarm_min;
         press_n(3, 2);
         show("sw3 x2 (alarm min down)");
-        chk("알람 분 -2, 감소가 실제로 동작", u_top.alarm_min == ((before + 58) % 60));
+        chk("알람 분 -2, 감소가 실제로 동작", u_top.alarm_min == ((prev + 58) % 60));
 
         $display("");
         $display("==================================================");
@@ -528,17 +538,40 @@ module setting_top_tb;
         press(0);                       // TIMER -> CLOCK
         press(0);                       // CLOCK -> CLOCK_SET
         show("CLOCK_SET");
-        before = u_top.timer_min*60 + u_top.timer_sec;
+        prev = u_top.timer_min*60 + u_top.timer_sec;
         goto_targ(2'd0);
         press_n(2, 5);
         after = u_top.timer_min*60 + u_top.timer_sec;
-        $display("    타이머 %0d초 -> %0d초 (실제 경과 약 0.8초)", before, after);
-        chk("시계 설정 버튼이 타이머를 건드리지 않음", (before - after) <= 1);
+        $display("    타이머 %0d초 -> %0d초 (실제 경과 약 0.8초)", prev, after);
+        chk("시계 설정 버튼이 타이머를 건드리지 않음", (prev - after) <= 1);
 
         #(3*TSEC);
         $display("    3초 더 기다린 뒤 타이머 %0d초", u_top.timer_min*60 + u_top.timer_sec);
         chk("다른 모드에서도 타이머가 1초씩 감소",
             (after - (u_top.timer_min*60 + u_top.timer_sec)) >= 2);
+
+        $display("");
+        $display("==================================================");
+        $display(" 12. PSD : 손을 대면 버저가 꺼지는지");
+        $display("==================================================");
+        while (u_top.mode != 2'd3) press(0);
+        press(5);                       // 타이머 초기화
+        goto_targ(2'd0);
+        press_n(2, 3);                  // 00:00:03
+        press(4);                       // 시작
+        show("timer start 00.03");
+
+        #(TSEC); #(TSEC); #(TSEC); #(TSEC);
+        show("expired");
+        chk("타이머 종료로 버저 켜짐", u_top.buzzer_enb == 1'b0);
+
+        force u_top.u_psd.o_data = 12'h900;     // 손을 가까이 댄 상황
+        #(400*TCLK);
+        show("PSD hand near");
+        chk("PSD가 손을 감지", u_top.psd_near == 1'b1);
+        chk("PSD로 버저 정지", u_top.buzzer_enb == 1'b1);
+        chk("타이머가 정지 상태로 복귀", u_top.timer_expire == 1'b0);
+        release u_top.u_psd.o_data;
 
         $display("");
         $display("==================================================");
