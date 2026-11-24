@@ -55,7 +55,7 @@ wire timer_run;
 wire timer_expire;
 wire timer_expire_start;
 
-
+wire buzzer_enb = ~(alarm_ring | timer_expire);
 
 assign o_mode = mode;
 
@@ -117,6 +117,14 @@ u_alarm(
     .i_sec_clk(alarm_sec_clk),
     .i_en_clk(alarm_en_clk),
     .i_rstn(i_rstn)
+);
+
+buzzer
+u_buzzer (
+    .o_out  (o_buzzer   ),
+    .i_enb  (buzzer_enb ),
+    .i_clk  (i_clk      ),
+    .i_rstn (i_rstn     )
 );
 
 timer
