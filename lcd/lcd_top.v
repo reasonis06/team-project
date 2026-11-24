@@ -22,6 +22,7 @@ module  lcd_top
     input       [1:0]   i_mode,             // 0:일반 1:설정 2:알람설정 3:타이머
     input       [4:0]   i_alarm_hour,
     input       [5:0]   i_alarm_min,
+    input       [5:0]   i_alarm_sec,
     input               i_alarm_en,
     input               i_clk,
     input               i_rstn
@@ -41,6 +42,7 @@ module  lcd_top
         .i_mode             (i_mode             ),
         .i_alarm_hour       (i_alarm_hour       ),
         .i_alarm_min        (i_alarm_min        ),
+        .i_alarm_sec        (i_alarm_sec        ),
         .i_alarm_en         (i_alarm_en         ),
         .i_clk              (i_clk              ),
         .i_rstn             (i_rstn             )
