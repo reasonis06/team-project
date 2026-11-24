@@ -23,8 +23,9 @@ module  lcd_textgen
     output  reg [16*8-1:0]  o_line_data2,
     input       [1:0]       i_mode,         // 0:일반 1:설정 2:알람설정 3:타이머
     input       [4:0]       i_alarm_hour,   // 0~23
-    input       [5:0]       i_alarm_min,    // 0~59
-    input                   i_alarm_en,     // 1:On 0:Off
+    input       [5:0]       i_alarm_min,
+    input       [5:0]       i_alarm_sec,
+    input                   i_alarm_en,
     input                   i_clk,
     input                   i_rstn
 );
@@ -57,7 +58,8 @@ module  lcd_textgen
     wire    [7:0]   char_hour1  = 8'h30 + (i_alarm_hour % 10);
     wire    [7:0]   char_min10  = 8'h30 + (i_alarm_min  / 10);
     wire    [7:0]   char_min1   = 8'h30 + (i_alarm_min  % 10);
-
+    wire [7:0] char_sec10 = 8'h30 + (i_alarm_sec / 10);
+    wire [7:0] char_sec1  = 8'h30 + (i_alarm_sec % 10);
 // --------------------------------------------------
 //  Line 1 : 모드 (문자열 왼쪽 글자 = MSB = 화면 첫 칸)
 // --------------------------------------------------
@@ -74,11 +76,26 @@ module  lcd_textgen
 // --------------------------------------------------
 //  Line 2 : "ALARM HH:MM  ON " / "ALARM HH:MM  OFF"
 // --------------------------------------------------
+    // --------------------------------------------------
+//  Line 2 : "ALM HH:MM:SS ON " / "ALM HH:MM:SS OFF"
+// --------------------------------------------------
     always @(*) begin
         if (i_alarm_en) begin
-            o_line_data2 = {"ALARM ", char_hour10, char_hour1, ":", char_min10, char_min1, "  ON "};
+            o_line_data2 = {
+                "ALM ",
+                char_hour10, char_hour1, ":",
+                char_min10, char_min1, ":",
+                char_sec10, char_sec1,
+                " ON "
+            };
         end else begin
-            o_line_data2 = {"ALARM ", char_hour10, char_hour1, ":", char_min10, char_min1, "  OFF"};
+            o_line_data2 = {
+                "ALM ",
+                char_hour10, char_hour1, ":",
+                char_min10, char_min1, ":",
+                char_sec10, char_sec1,
+                " OFF"
+            };
         end
     end
 
